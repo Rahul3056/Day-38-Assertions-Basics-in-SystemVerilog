@@ -1,0 +1,65 @@
+**simple example** of an **Immediate Assertion** in SystemVerilog:
+
+### **Design Under Test (DUT): 2-bit Counter**
+
+```systemverilog
+module counter (
+    input  logic clk,
+    input  logic rst,
+    output logic [1:0] count
+);
+    always_ff @(posedge clk or posedge rst) begin
+        if (rst)
+            count <= 0;
+        else
+            count <= count + 1;
+    end
+endmodule
+```
+
+---
+
+### **Testbench with Immediate Assertion**
+
+```systemverilog
+module tb_counter;
+
+    logic clk, rst;
+    logic [1:0] count;
+
+    // Instantiate DUT
+    counter dut (
+        .clk(clk),
+        .rst(rst),
+        .count(count)
+    );
+
+    // Clock generation
+    always #5 clk = ~clk;
+
+    initial begin
+        clk = 0; rst = 1;
+        #10 rst = 0;
+
+        // Wait for a few clock cycles
+        repeat (4) @(posedge clk);
+
+        // Assertion: counter should not exceed 3
+        assert (count <= 2'b11)
+        else $error("Counter value out of range: %0b", count);
+
+        $display("Assertion passed. Counter is within range.");
+        $finish;
+    end
+
+endmodule
+```
+
+---
+
+### **What This Does**
+
+- The counter counts from 0 to 3 (since it's 2-bit).
+- The testbench resets it and waits for 4 cycles.
+- Then it **asserts that `count` does not exceed `2'b11`**.
+- If the counter logic is wrong and it overflows, the **assertion will fail** and print an error.
